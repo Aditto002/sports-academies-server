@@ -28,9 +28,36 @@ async function run() {
     await client.connect();
 
     const populerClassCollection = client.db("sports_academies").collection("populer");
+    const instructorClassCollection = client.db("sports_academies").collection("instructor");
+    const cartsClassCollection = client.db("sports_academies").collection("carts");
 
     app.get('/populer',async(req,res)=>{
         const result = await populerClassCollection.find().toArray();
+        res.send(result);
+    })
+    app.get('/instructor',async(req,res)=>{
+        const result = await instructorClassCollection.find().toArray();
+        res.send(result);
+    })
+
+    // cart collection
+    
+    app.get('/carts', async(req,res)=>{
+        const email = req.query.email;
+        console.log(email)
+        if(!email){
+            res.send([])
+        }
+        const query ={email: email};
+        const result = await cartsClassCollection.find(query).toArray();
+        res.send(result);
+    })
+
+
+    app.post("/carts",async(req,res)=>{
+        const item = req.body;
+        console.log(item);
+        const result = await cartsClassCollection.insertOne(item);
         res.send(result);
     })
 
