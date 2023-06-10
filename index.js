@@ -27,9 +27,17 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 
-    const populerClassCollection = client.db("sports_academies").collection("populer");
+    const usersCollection = client.db("sports_academies").collection("users");
+    const Collection = client.db("sports_academies").collection("populer");
     const instructorClassCollection = client.db("sports_academies").collection("instructor");
     const cartsClassCollection = client.db("sports_academies").collection("carts");
+
+    // users related apis
+    app.post('/users',async(req,res)=>{
+      const user = req.body;
+      const result = await usersCollection.insertOne(user);
+      res.send(result);
+    })
 
     app.get('/populer',async(req,res)=>{
         const result = await populerClassCollection.find().toArray();
