@@ -28,13 +28,24 @@ async function run() {
     await client.connect();
 
     const usersCollection = client.db("sports_academies").collection("users");
-    const Collection = client.db("sports_academies").collection("populer");
+    const populerClassCollection = client.db("sports_academies").collection("populer");
     const instructorClassCollection = client.db("sports_academies").collection("instructor");
     const cartsClassCollection = client.db("sports_academies").collection("carts");
 
     // users related apis
+    app.get('/users',async(req,res)=>{
+      const result = await usersCollection.find().toArray();
+      res.send(result);
+    })
     app.post('/users',async(req,res)=>{
       const user = req.body;
+      console.log(user);
+      const query = {email: user.email}
+      const existingUser = await usersCollection.findOne(query)
+      console.log('hello user ',existingUser)
+      if(existingUser){
+        return res.send({massage: 'user already exists'})
+      }
       const result = await usersCollection.insertOne(user);
       res.send(result);
     })
