@@ -4,6 +4,7 @@ const cors = require('cors');
 const port = process.env.PORT || 5000 ;
 var jwt = require('jsonwebtoken');
 require('dotenv').config()
+const stripe = require('stripe')(process.env.PAYMENT_SECRET_KEY)
 
 //middleware
 
@@ -49,6 +50,7 @@ async function run() {
     const populerClassCollection = client.db("sports_academies").collection("populer");
     const instructorClassCollection = client.db("sports_academies").collection("instructor");
     const cartsClassCollection = client.db("sports_academies").collection("carts");
+    const paymentCollection = client.db("sports_academies").collection("payments");
 
 
     //jwt
@@ -123,10 +125,16 @@ async function run() {
         const result = await populerClassCollection.find().toArray();
         res.send(result);
     })
-//////////
 app.post('/populer', verifyJWT, verifyAdmin, async (req, res) => {
   const newItem = req.body;
   const result = await populerClassCollection.insertOne(newItem)
+  res.send(result);
+})
+
+app.delete('/populer/:id', verifyJWT, verifyAdmin, async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) }
+  const result = await populerClassCollection.deleteOne(query);
   res.send(result);
 })
 
@@ -174,6 +182,38 @@ app.post('/populer', verifyJWT, verifyAdmin, async (req, res) => {
       res.send(result);
       
     })
+
+      
+     // create payment intent
+     app.post('/create-payment-intent', verifyJWT, async (req, res) => {
+      const { price } = req.body;
+      const amount = parseInt(price * 100);
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: 'usd',
+        payment_method_types: ['card']
+      });
+
+      res.send({
+        clientSecret: paymentIntent.client_secret
+      })
+    })
+
+
+    app.post('/payments', verifyJWT, async (req, res) => {
+      const payment = req.body;
+      const insertResult = await paymentCollection.insertOne(payment);
+
+      const query = { _id: { $in: payment.cartItems.map(id => id) } }
+      const deleteResult = await cartsClassCollection.deleteMany(query)
+
+      res.send({ insertResult, deleteResult });
+    })
+
+    app.get('/payments',async(req,res)=>{
+      const result = await paymentCollection.find().toArray();
+      res.send(result);
+  })
 
 
     // Send a ping to confirm a successful connection
